@@ -1,1 +1,18 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global Styles */
+/* @import "primeng/resources/themes/lara-light-blue/theme.css"; */
+/* @import "primeng/resources/primeng.css"; */
+@import "primeicons/primeicons.css";
+
+/* Reset & Basics */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: var(--font-family);
+    background-color: var(--surface-ground);
+}
+
+:root {
+    --font-family: 'Inter', sans-serif;
+}
