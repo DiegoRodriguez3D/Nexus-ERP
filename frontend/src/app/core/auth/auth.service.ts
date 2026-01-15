@@ -15,7 +15,9 @@ export interface LoginResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:3000';
+  private apiUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+    ? 'https://nexus-erp-3kpp.onrender.com'
+    : 'http://localhost:3000';
   private tokenKey = 'nexus_token';
   private userKey = 'nexus_user';
 

@@ -1,4 +1,4 @@
 export const environment = {
     production: true,
-    apiUrl: 'https://your-backend-url.onrender.com'
+    apiUrl: 'https://nexus-erp-3kpp.onrender.com'
 };

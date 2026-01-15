@@ -23,7 +23,9 @@ export interface Category {
     providedIn: 'root'
 })
 export class ProductService {
-    private apiUrl = 'http://localhost:3000';
+    private apiUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+        ? 'https://nexus-erp-3kpp.onrender.com'
+        : 'http://localhost:3000';
 
     constructor(
         private http: HttpClient,

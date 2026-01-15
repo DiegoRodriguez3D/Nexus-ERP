@@ -36,7 +36,9 @@ export interface ChartData {
     providedIn: 'root'
 })
 export class DashboardService {
-    private apiUrl = 'http://localhost:3000/dashboard';
+    private apiUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+        ? 'https://nexus-erp-3kpp.onrender.com/dashboard'
+        : 'http://localhost:3000/dashboard';
 
     constructor(
         private http: HttpClient,

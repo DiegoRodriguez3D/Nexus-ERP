@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
@@ -37,7 +37,9 @@ export interface PaginatedMovements {
     providedIn: 'root'
 })
 export class ApiService {
-    private apiUrl = 'http://localhost:3000';
+    private apiUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+        ? 'https://nexus-erp-3kpp.onrender.com'
+        : 'http://localhost:3000';
 
     constructor(
         private http: HttpClient,
