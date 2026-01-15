@@ -63,16 +63,16 @@ import { I18nService } from '../../core/services/i18n.service';
               <!-- Chart -->
               <svg viewBox="0 0 400 200" class="chart">
                 <line *ngFor="let i of [0, 1, 2, 3, 4]" [attr.x1]="0" [attr.y1]="i * 40" [attr.x2]="400" [attr.y2]="i * 40" stroke="var(--border-color)" stroke-width="1"/>
-                <polyline fill="none" stroke="var(--accent-color)" stroke-width="2" [attr.points]="getChartPoints()"/>
+                <polyline fill="none" stroke="var(--chart-color)" stroke-width="2.5" [attr.points]="getChartPoints()"/>
                 <defs>
                   <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:var(--accent-color);stop-opacity:0.3"/>
-                    <stop offset="100%" style="stop-color:var(--accent-color);stop-opacity:0"/>
+                    <stop offset="0%" style="stop-color:var(--chart-color);stop-opacity:0.3"/>
+                    <stop offset="100%" style="stop-color:var(--chart-color);stop-opacity:0"/>
                   </linearGradient>
                 </defs>
                 <polygon fill="url(#chartGradient)" [attr.points]="getAreaPoints()"/>
                 <!-- Data points -->
-                <circle *ngFor="let point of chartPoints; let i = index" [attr.cx]="point.x" [attr.cy]="point.y" r="4" fill="var(--accent-color)"/>
+                <circle *ngFor="let point of chartPoints; let i = index" [attr.cx]="point.x" [attr.cy]="point.y" r="4" fill="var(--chart-color)"/>
               </svg>
             </div>
             <!-- X-axis labels -->
@@ -120,7 +120,7 @@ import { I18nService } from '../../core/services/i18n.service';
     .chart-labels { display: flex; justify-content: space-between; padding: 0.5rem 0 0.5rem 40px; font-size: 0.75rem; color: var(--text-muted); }
     .chart-legend { display: flex; justify-content: center; padding: 0.5rem; border-top: 1px solid var(--border-color); margin-top: 0.5rem; }
     .legend-label { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; }
-    .legend-label::before { content: ''; width: 12px; height: 3px; background: var(--accent-color); border-radius: 2px; }
+    .legend-label::before { content: ''; width: 12px; height: 3px; background: var(--chart-color); border-radius: 2px; }
     @media (max-width: 1024px) { .stats-grid { grid-template-columns: 1fr; } .content-grid { grid-template-columns: 1fr; } }
   `]
 })

@@ -59,24 +59,6 @@ import { Router } from '@angular/router';
               <i [class]="themeService.currentTheme() === 'dark' ? 'pi pi-sun' : 'pi pi-moon'"></i>
             </button>
             
-            <!-- Settings -->
-            <div class="dropdown-container">
-              <button class="icon-btn" (click)="toggleSettings($event)">
-                <i class="pi pi-cog"></i>
-              </button>
-              <div class="dropdown" *ngIf="showSettings">
-                <div class="dropdown-header">{{ i18n.currentLang() === 'es' ? 'Configuración' : 'Settings' }}</div>
-                <div class="dropdown-item" (click)="toggleTheme(); showSettings = false;">
-                  <i [class]="themeService.currentTheme() === 'dark' ? 'pi pi-sun' : 'pi pi-moon'"></i>
-                  {{ themeService.currentTheme() === 'dark' ? (i18n.currentLang() === 'es' ? 'Tema Claro' : 'Light Theme') : (i18n.currentLang() === 'es' ? 'Tema Oscuro' : 'Dark Theme') }}
-                </div>
-                <div class="dropdown-item" (click)="i18n.toggleLanguage(); showSettings = false;">
-                  <i class="pi pi-globe"></i>
-                  {{ i18n.currentLang() === 'es' ? 'Cambiar a Inglés' : 'Switch to Spanish' }}
-                </div>
-              </div>
-            </div>
-            
             <!-- Notifications -->
             <div class="dropdown-container">
               <button class="icon-btn" (click)="toggleNotifications($event)">
@@ -123,15 +105,16 @@ import { Router } from '@angular/router';
   `,
   styles: [`
     .layout { display: flex; height: 100vh; overflow: hidden; }
-    .sidebar { width: 240px; background: var(--bg-sidebar); display: flex; flex-direction: column; flex-shrink: 0; }
-    .sidebar-header { padding: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-    .logo { display: flex; align-items: center; gap: 0.75rem; color: white; font-size: 1.25rem; font-weight: 600; }
+    .sidebar { width: 240px; background: var(--bg-sidebar); border-right: 1px solid var(--sidebar-border); display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-header { padding: 1.5rem; }
+    .logo { display: flex; align-items: center; gap: 0.75rem; color: var(--text-sidebar); font-size: 1.25rem; font-weight: 600; }
     .logo i { font-size: 1.5rem; color: var(--accent-color); }
     .sidebar-nav { padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem; }
     .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: var(--text-sidebar); border-radius: var(--radius-md); transition: all 0.2s; font-size: 0.9375rem; }
-    .nav-item:hover { background: rgba(255, 255, 255, 0.1); }
+    .nav-item:hover { background: var(--bg-hover); }
     .nav-item.active { background: var(--accent-color); color: white; }
-    .nav-item i { font-size: 1.125rem; width: 1.5rem; }
+    .nav-item i { font-size: 1.125rem; width: 1.5rem; color: var(--text-sidebar-muted); }
+    .nav-item.active i { color: white; }
     .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-primary); }
     .topbar { height: 64px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; flex-shrink: 0; }
     .topbar-right { display: flex; align-items: center; gap: 0.5rem; }
@@ -167,7 +150,6 @@ export class LayoutComponent {
   private router = inject(Router);
 
   showUserMenu = false;
-  showSettings = false;
   showNotifications = false;
 
   notifications = [
@@ -179,7 +161,6 @@ export class LayoutComponent {
   @HostListener('document:click')
   onDocumentClick() {
     this.showUserMenu = false;
-    this.showSettings = false;
     this.showNotifications = false;
   }
 
@@ -188,14 +169,6 @@ export class LayoutComponent {
   toggleUserMenu(event: Event) {
     event.stopPropagation();
     this.showUserMenu = !this.showUserMenu;
-    this.showSettings = false;
-    this.showNotifications = false;
-  }
-
-  toggleSettings(event: Event) {
-    event.stopPropagation();
-    this.showSettings = !this.showSettings;
-    this.showUserMenu = false;
     this.showNotifications = false;
   }
 
@@ -203,7 +176,6 @@ export class LayoutComponent {
     event.stopPropagation();
     this.showNotifications = !this.showNotifications;
     this.showUserMenu = false;
-    this.showSettings = false;
   }
 
   getUserEmail(): string {
