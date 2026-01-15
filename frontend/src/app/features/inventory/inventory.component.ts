@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService, Product } from '../../core/services/product.service';
@@ -37,8 +37,14 @@ import { I18nService } from '../../core/services/i18n.service';
         </div>
       </div>
 
+      <!-- Loading -->
+      <div class="loading" *ngIf="loading">
+        <i class="pi pi-spin pi-spinner"></i>
+        <span>Cargando...</span>
+      </div>
+
       <!-- Table -->
-      <div class="table-container card">
+      <div class="table-container card" *ngIf="!loading">
         <table class="data-table">
           <thead>
             <tr>
@@ -106,6 +112,11 @@ import { I18nService } from '../../core/services/i18n.service';
       border-radius: var(--radius-md); background: var(--bg-card);
       color: var(--text-primary); font-size: 0.875rem; cursor: pointer;
     }
+    .loading {
+      display: flex; align-items: center; justify-content: center; gap: 1rem;
+      padding: 3rem; color: var(--accent-color);
+    }
+    .loading i { font-size: 1.5rem; }
     .table-container { overflow-x: auto; }
     .data-table { width: 100%; border-collapse: collapse; }
     .data-table th {
@@ -146,6 +157,7 @@ import { I18nService } from '../../core/services/i18n.service';
 })
 export class InventoryComponent implements OnInit {
   private productService = inject(ProductService);
+  private cdr = inject(ChangeDetectorRef);
   i18n = inject(I18nService);
 
   products: Product[] = [];
@@ -153,19 +165,29 @@ export class InventoryComponent implements OnInit {
   categories: string[] = [];
   searchTerm = '';
   selectedCategory = '';
+  loading = true;
 
   private colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#22c55e', '#06b6d4'];
 
-  ngOnInit() { this.loadProducts(); }
+  ngOnInit() {
+    this.loadProducts();
+  }
 
   loadProducts() {
+    this.loading = true;
     this.productService.getProducts().subscribe({
       next: (data) => {
         this.products = data;
         this.filteredProducts = data;
         this.extractCategories();
+        this.loading = false;
+        this.cdr.detectChanges();
       },
-      error: (err) => console.error('Error loading products:', err)
+      error: (err) => {
+        console.error('Error loading products:', err);
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 

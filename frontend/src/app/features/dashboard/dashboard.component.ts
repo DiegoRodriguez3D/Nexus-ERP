@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService, DashboardStats, LowStockProduct, ChartData } from '../../core/services/dashboard.service';
 import { I18nService } from '../../core/services/i18n.service';
@@ -49,9 +49,12 @@ import { I18nService } from '../../core/services/i18n.service';
                 <span class="alert-stock">Stock: {{ product.stock }}</span>
               </div>
             </div>
-            <div class="no-data" *ngIf="lowStockProducts.length === 0">
+            <div class="no-data" *ngIf="lowStockProducts.length === 0 && !loading">
               <i class="pi pi-check-circle"></i>
               <span>{{ i18n.t('dashboard.noAlerts') }}</span>
+            </div>
+            <div class="loading" *ngIf="loading">
+              <i class="pi pi-spin pi-spinner"></i>
             </div>
           </div>
         </div>
@@ -151,6 +154,11 @@ import { I18nService } from '../../core/services/i18n.service';
       gap: 0.5rem; padding: 2rem; color: var(--text-muted);
     }
     .no-data i { font-size: 2rem; color: var(--success-color); }
+    .loading {
+      display: flex; justify-content: center; padding: 2rem;
+      color: var(--accent-color);
+    }
+    .loading i { font-size: 1.5rem; }
     .chart-container { position: relative; }
     .chart { width: 100%; height: 200px; }
     .chart-labels {
@@ -165,30 +173,51 @@ import { I18nService } from '../../core/services/i18n.service';
 })
 export class DashboardComponent implements OnInit {
   private dashboardService = inject(DashboardService);
+  private cdr = inject(ChangeDetectorRef);
   i18n = inject(I18nService);
 
   stats: DashboardStats | null = null;
   lowStockProducts: LowStockProduct[] = [];
   chartData: ChartData[] = [];
+  loading = true;
 
   ngOnInit() {
     this.loadDashboardData();
   }
 
   loadDashboardData() {
+    this.loading = true;
+
     this.dashboardService.getStats().subscribe({
-      next: (data) => this.stats = data,
+      next: (data) => {
+        this.stats = data;
+        this.cdr.detectChanges();
+      },
       error: (err) => console.error('Error loading stats:', err)
     });
 
     this.dashboardService.getLowStockProducts().subscribe({
-      next: (data) => this.lowStockProducts = data,
-      error: (err) => console.error('Error loading low stock:', err)
+      next: (data) => {
+        this.lowStockProducts = data;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading low stock:', err);
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
     });
 
     this.dashboardService.getMovementsChart().subscribe({
-      next: (data) => this.chartData = data.length ? data : this.getMockChartData(),
-      error: () => this.chartData = this.getMockChartData()
+      next: (data) => {
+        this.chartData = data.length ? data : this.getMockChartData();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.chartData = this.getMockChartData();
+        this.cdr.detectChanges();
+      }
     });
   }
 
