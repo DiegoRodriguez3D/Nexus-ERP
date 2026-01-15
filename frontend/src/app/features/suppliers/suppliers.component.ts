@@ -5,10 +5,10 @@ import { ApiService, Supplier } from '../../core/services/api.service';
 import { I18nService } from '../../core/services/i18n.service';
 
 @Component({
-    selector: 'app-suppliers',
-    standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
+  selector: 'app-suppliers',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
     <div class="suppliers">
       <div class="page-header">
         <h1>{{ i18n.currentLang() === 'es' ? 'Proveedores' : 'Suppliers' }}</h1>
@@ -17,14 +17,21 @@ import { I18nService } from '../../core/services/i18n.service';
         </button>
       </div>
 
+      <!-- Search -->
+      <div class="filters-bar">
+        <div class="search-box">
+          <i class="pi pi-search"></i>
+          <input type="text" [placeholder]="i18n.currentLang() === 'es' ? 'Buscar proveedor...' : 'Search supplier...'" 
+                 [(ngModel)]="searchTerm" (input)="filterSuppliers()" />
+        </div>
+      </div>
+
       <div class="loading" *ngIf="loading"><i class="pi pi-spin pi-spinner"></i></div>
 
       <div class="suppliers-grid" *ngIf="!loading">
-        <div class="supplier-card card" *ngFor="let supplier of suppliers">
+        <div class="supplier-card card" *ngFor="let supplier of filteredSuppliers">
           <div class="supplier-header">
-            <div class="supplier-avatar">
-              <i class="pi pi-building"></i>
-            </div>
+            <div class="supplier-avatar"><i class="pi pi-building"></i></div>
             <div class="supplier-info">
               <h3>{{ supplier.name }}</h3>
               <span class="products-count">{{ supplier.products?.length || 0 }} {{ i18n.currentLang() === 'es' ? 'productos' : 'products' }}</span>
@@ -40,7 +47,7 @@ import { I18nService } from '../../core/services/i18n.service';
             <div class="detail" *ngIf="supplier.address"><i class="pi pi-map-marker"></i> {{ supplier.address }}</div>
           </div>
         </div>
-        <div class="no-data" *ngIf="suppliers.length === 0">
+        <div class="no-data" *ngIf="filteredSuppliers.length === 0">
           <i class="pi pi-building"></i>
           <span>{{ i18n.currentLang() === 'es' ? 'No hay proveedores' : 'No suppliers' }}</span>
         </div>
@@ -76,10 +83,14 @@ import { I18nService } from '../../core/services/i18n.service';
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .suppliers { max-width: 1400px; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .page-header h1 { font-size: 1.75rem; font-weight: 600; }
+    .filters-bar { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+    .search-box { flex: 1; max-width: 300px; position: relative; }
+    .search-box i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .search-box input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card); color: var(--text-primary); }
     .loading { display: flex; justify-content: center; padding: 3rem; color: var(--accent-color); }
     .loading i { font-size: 2rem; }
     .suppliers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
@@ -109,54 +120,70 @@ import { I18nService } from '../../core/services/i18n.service';
   `]
 })
 export class SuppliersComponent implements OnInit {
-    private api = inject(ApiService);
-    private cdr = inject(ChangeDetectorRef);
-    i18n = inject(I18nService);
+  private api = inject(ApiService);
+  private cdr = inject(ChangeDetectorRef);
+  i18n = inject(I18nService);
 
-    suppliers: Supplier[] = [];
-    loading = true;
-    showModal = false;
-    saving = false;
-    editingId: string | null = null;
-    formData = { name: '', email: '', phone: '', address: '' };
+  suppliers: Supplier[] = [];
+  filteredSuppliers: Supplier[] = [];
+  loading = true;
+  showModal = false;
+  saving = false;
+  editingId: string | null = null;
+  searchTerm = '';
+  formData = { name: '', email: '', phone: '', address: '' };
 
-    ngOnInit() { this.loadData(); }
+  ngOnInit() { this.loadData(); }
 
-    loadData() {
-        this.loading = true;
-        this.api.getSuppliers().subscribe({
-            next: (data) => { this.suppliers = data; this.loading = false; this.cdr.detectChanges(); },
-            error: () => { this.loading = false; this.cdr.detectChanges(); }
-        });
+  loadData() {
+    this.loading = true;
+    this.api.getSuppliers().subscribe({
+      next: (data) => {
+        this.suppliers = data;
+        this.filteredSuppliers = data;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.loading = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  filterSuppliers() {
+    const term = this.searchTerm.toLowerCase();
+    this.filteredSuppliers = this.suppliers.filter(s =>
+      s.name.toLowerCase().includes(term) ||
+      s.email?.toLowerCase().includes(term) ||
+      s.phone?.includes(term)
+    );
+  }
+
+  openModal() {
+    this.editingId = null;
+    this.formData = { name: '', email: '', phone: '', address: '' };
+    this.showModal = true;
+  }
+
+  editSupplier(s: Supplier) {
+    this.editingId = s.id;
+    this.formData = { name: s.name, email: s.email || '', phone: s.phone || '', address: s.address || '' };
+    this.showModal = true;
+  }
+
+  saveSupplier() {
+    if (!this.formData.name) return;
+    this.saving = true;
+    const obs = this.editingId
+      ? this.api.updateSupplier(this.editingId, this.formData)
+      : this.api.createSupplier(this.formData);
+    obs.subscribe({
+      next: () => { this.showModal = false; this.saving = false; this.loadData(); },
+      error: () => { this.saving = false; }
+    });
+  }
+
+  deleteSupplier(id: string) {
+    if (confirm(this.i18n.currentLang() === 'es' ? '¿Eliminar este proveedor?' : 'Delete this supplier?')) {
+      this.api.deleteSupplier(id).subscribe({ next: () => this.loadData() });
     }
-
-    openModal() {
-        this.editingId = null;
-        this.formData = { name: '', email: '', phone: '', address: '' };
-        this.showModal = true;
-    }
-
-    editSupplier(s: Supplier) {
-        this.editingId = s.id;
-        this.formData = { name: s.name, email: s.email || '', phone: s.phone || '', address: s.address || '' };
-        this.showModal = true;
-    }
-
-    saveSupplier() {
-        if (!this.formData.name) return;
-        this.saving = true;
-        const obs = this.editingId
-            ? this.api.updateSupplier(this.editingId, this.formData)
-            : this.api.createSupplier(this.formData);
-        obs.subscribe({
-            next: () => { this.showModal = false; this.saving = false; this.loadData(); },
-            error: () => { this.saving = false; }
-        });
-    }
-
-    deleteSupplier(id: string) {
-        if (confirm(this.i18n.currentLang() === 'es' ? '¿Eliminar este proveedor?' : 'Delete this supplier?')) {
-            this.api.deleteSupplier(id).subscribe({ next: () => this.loadData() });
-        }
-    }
+  }
 }

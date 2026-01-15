@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsNotEmpty, IsPositive, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, IsUUID } from 'class-validator';
 import { MovementType } from '@prisma/client';
 
 export class CreateInventoryDto {
@@ -14,7 +14,11 @@ export class CreateInventoryDto {
     @IsPositive()
     quantity: number;
 
+    @IsOptional()
+    @IsString()
+    notes?: string;
+
+    @IsOptional()
     @IsUUID()
-    @IsNotEmpty()
-    userId: string; // Temporarily passed manually, later from JWT
+    userId?: string; // Optional, will be set from token if not provided
 }

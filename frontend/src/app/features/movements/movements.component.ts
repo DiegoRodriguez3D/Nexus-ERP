@@ -1,15 +1,15 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, StockMovement } from '../../core/services/api.service';
+import { ApiService, StockMovement, PaginatedMovements } from '../../core/services/api.service';
 import { ProductService, Product } from '../../core/services/product.service';
 import { I18nService } from '../../core/services/i18n.service';
 
 @Component({
-    selector: 'app-movements',
-    standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
+  selector: 'app-movements',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
     <div class="movements">
       <div class="page-header">
         <h1>{{ i18n.currentLang() === 'es' ? 'Movimientos de Stock' : 'Stock Movements' }}</h1>
@@ -18,9 +18,21 @@ import { I18nService } from '../../core/services/i18n.service';
         </button>
       </div>
 
-      <div class="loading" *ngIf="loading">
-        <i class="pi pi-spin pi-spinner"></i>
+      <!-- Filters -->
+      <div class="filters-bar">
+        <div class="search-box">
+          <i class="pi pi-search"></i>
+          <input type="text" [placeholder]="i18n.currentLang() === 'es' ? 'Buscar producto...' : 'Search product...'" 
+                 [(ngModel)]="searchTerm" (input)="onSearch()" />
+        </div>
+        <select [(ngModel)]="typeFilter" (change)="loadData()">
+          <option value="">{{ i18n.currentLang() === 'es' ? 'Todos' : 'All' }}</option>
+          <option value="IN">{{ i18n.currentLang() === 'es' ? 'Entradas' : 'In' }}</option>
+          <option value="OUT">{{ i18n.currentLang() === 'es' ? 'Salidas' : 'Out' }}</option>
+        </select>
       </div>
+
+      <div class="loading" *ngIf="loading"><i class="pi pi-spin pi-spinner"></i></div>
 
       <div class="table-container card" *ngIf="!loading">
         <table class="data-table">
@@ -51,9 +63,21 @@ import { I18nService } from '../../core/services/i18n.service';
             </tr>
           </tbody>
         </table>
+        
         <div class="no-data" *ngIf="movements.length === 0">
           <i class="pi pi-inbox"></i>
           <span>{{ i18n.currentLang() === 'es' ? 'No hay movimientos' : 'No movements' }}</span>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" *ngIf="totalPages > 1">
+          <button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+            <i class="pi pi-chevron-left"></i>
+          </button>
+          <span>{{ currentPage }} / {{ totalPages }}</span>
+          <button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+            <i class="pi pi-chevron-right"></i>
+          </button>
         </div>
       </div>
 
@@ -97,10 +121,15 @@ import { I18nService } from '../../core/services/i18n.service';
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .movements { max-width: 1400px; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .page-header h1 { font-size: 1.75rem; font-weight: 600; }
+    .filters-bar { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+    .search-box { flex: 1; max-width: 300px; position: relative; }
+    .search-box i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .search-box input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card); color: var(--text-primary); }
+    .filters-bar select { padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card); color: var(--text-primary); }
     .loading { display: flex; justify-content: center; padding: 3rem; color: var(--accent-color); }
     .loading i { font-size: 2rem; }
     .table-container { overflow-x: auto; }
@@ -116,6 +145,10 @@ import { I18nService } from '../../core/services/i18n.service';
     .qty.negative { color: var(--danger-color); }
     .no-data { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 3rem; color: var(--text-muted); }
     .no-data i { font-size: 3rem; }
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; border-top: 1px solid var(--border-color); }
+    .pagination button { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); border-radius: var(--radius-sm); cursor: pointer; }
+    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pagination span { font-size: 0.875rem; color: var(--text-secondary); }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal { background: var(--bg-card); border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 500px; }
     .modal h2 { margin-bottom: 1.5rem; font-size: 1.25rem; }
@@ -127,52 +160,73 @@ import { I18nService } from '../../core/services/i18n.service';
   `]
 })
 export class MovementsComponent implements OnInit {
-    private api = inject(ApiService);
-    private productService = inject(ProductService);
-    private cdr = inject(ChangeDetectorRef);
-    i18n = inject(I18nService);
+  private api = inject(ApiService);
+  private productService = inject(ProductService);
+  private cdr = inject(ChangeDetectorRef);
+  i18n = inject(I18nService);
 
-    movements: StockMovement[] = [];
-    products: Product[] = [];
-    loading = true;
-    showModal = false;
-    saving = false;
-    newMovement = { productId: '', type: 'IN' as 'IN' | 'OUT', quantity: 1, notes: '' };
+  movements: StockMovement[] = [];
+  products: Product[] = [];
+  loading = true;
+  showModal = false;
+  saving = false;
+  searchTerm = '';
+  typeFilter = '';
+  currentPage = 1;
+  totalPages = 1;
+  private searchTimeout: any;
 
-    ngOnInit() {
+  newMovement = { productId: '', type: 'IN' as 'IN' | 'OUT', quantity: 1, notes: '' };
+
+  ngOnInit() {
+    this.loadData();
+    this.productService.getProducts().subscribe({ next: (data) => { this.products = data; this.cdr.detectChanges(); } });
+  }
+
+  loadData() {
+    this.loading = true;
+    this.api.getMovements({ page: this.currentPage, search: this.searchTerm, type: this.typeFilter }).subscribe({
+      next: (res) => {
+        this.movements = res.data;
+        this.totalPages = res.totalPages;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.loading = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  onSearch() {
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => {
+      this.currentPage = 1;
+      this.loadData();
+    }, 300);
+  }
+
+  goToPage(page: number) {
+    this.currentPage = page;
+    this.loadData();
+  }
+
+  formatDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  createMovement() {
+    if (!this.newMovement.productId || !this.newMovement.quantity) return;
+    this.saving = true;
+    this.api.createMovement(this.newMovement).subscribe({
+      next: () => {
+        this.showModal = false;
+        this.saving = false;
+        this.newMovement = { productId: '', type: 'IN', quantity: 1, notes: '' };
         this.loadData();
-    }
-
-    loadData() {
-        this.loading = true;
-        this.api.getMovements().subscribe({
-            next: (data) => {
-                this.movements = data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                this.loading = false;
-                this.cdr.detectChanges();
-            },
-            error: () => { this.loading = false; this.cdr.detectChanges(); }
-        });
-        this.productService.getProducts().subscribe({
-            next: (data) => { this.products = data; this.cdr.detectChanges(); }
-        });
-    }
-
-    formatDate(dateStr: string): string {
-        return new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    }
-
-    createMovement() {
-        if (!this.newMovement.productId || !this.newMovement.quantity) return;
-        this.saving = true;
-        this.api.createMovement(this.newMovement).subscribe({
-            next: () => {
-                this.showModal = false;
-                this.saving = false;
-                this.newMovement = { productId: '', type: 'IN', quantity: 1, notes: '' };
-                this.loadData();
-            },
-            error: () => { this.saving = false; }
-        });
-    }
+      },
+      error: (err) => {
+        this.saving = false;
+        alert(err.error?.message || 'Error al crear movimiento');
+      }
+    });
+  }
 }

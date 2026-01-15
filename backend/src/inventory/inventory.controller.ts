@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
@@ -8,13 +8,28 @@ export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) { }
 
   @Post()
-  create(@Body() createInventoryDto: CreateInventoryDto) {
+  async create(@Body() createInventoryDto: CreateInventoryDto) {
+    // If no userId provided, get first admin user as fallback
+    if (!createInventoryDto.userId) {
+      const defaultUser = await this.inventoryService.getDefaultUser();
+      createInventoryDto.userId = defaultUser?.id;
+    }
     return this.inventoryService.create(createInventoryDto);
   }
 
   @Get()
-  findAll() {
-    return this.inventoryService.findAll();
+  findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('type') type?: string,
+  ) {
+    return this.inventoryService.findAll({
+      page: page ? parseInt(page) : 1,
+      limit: limit ? parseInt(limit) : 20,
+      search,
+      type,
+    });
   }
 
   @Get(':id')

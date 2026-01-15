@@ -4,12 +4,27 @@ import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MovementType } from '@prisma/client';
 
+interface FindAllOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  type?: string;
+}
+
 @Injectable()
 export class InventoryService {
   constructor(private readonly prisma: PrismaService) { }
 
+  async getDefaultUser() {
+    return this.prisma.user.findFirst({ where: { role: 'ADMIN' } });
+  }
+
   async create(createInventoryDto: CreateInventoryDto) {
-    const { productId, type, quantity, userId } = createInventoryDto;
+    const { productId, type, quantity, userId, notes } = createInventoryDto;
+
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
 
     return this.prisma.$transaction(async (prisma) => {
       const product = await prisma.product.findUnique({
@@ -31,39 +46,59 @@ export class InventoryService {
         newStock -= quantity;
       }
 
-      // Update product stock
       await prisma.product.update({
         where: { id: productId },
         data: { stock: newStock },
       });
 
-      // Create movement record
       return prisma.stockMovement.create({
         data: {
           productId,
           userId,
           type,
           quantity,
+          notes,
         },
+        include: { product: true, user: true },
       });
     });
   }
 
-  findAll() {
-    return this.prisma.stockMovement.findMany({
-      include: {
-        product: true,
-        user: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(options: FindAllOptions = {}) {
+    const { page = 1, limit = 20, search, type } = options;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (type && (type === 'IN' || type === 'OUT')) {
+      where.type = type;
+    }
+    if (search) {
+      where.product = {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { sku: { contains: search, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.stockMovement.findMany({
+        where,
+        include: { product: true, user: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.stockMovement.count({ where }),
+    ]);
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   findOne(id: string) {
-    return this.prisma.stockMovement.findUnique({ where: { id } });
+    return this.prisma.stockMovement.findUnique({ where: { id }, include: { product: true, user: true } });
   }
 
-  // Movements shouldn't be updated/deleted ideally for audit purposes, but keeping stubs
   update(id: string, updateInventoryDto: UpdateInventoryDto) {
     return `This action updates a #${id} inventory`;
   }

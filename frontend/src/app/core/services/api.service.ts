@@ -25,6 +25,14 @@ export interface StockMovement {
     user?: { email: string };
 }
 
+export interface PaginatedMovements {
+    data: StockMovement[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -62,8 +70,11 @@ export class ApiService {
     }
 
     // Stock Movements
-    getMovements(): Observable<StockMovement[]> {
-        return this.http.get<StockMovement[]>(`${this.apiUrl}/inventory`, { headers: this.getHeaders() });
+    getMovements(params?: { page?: number; limit?: number; search?: string; type?: string }): Observable<PaginatedMovements> {
+        let url = `${this.apiUrl}/inventory?page=${params?.page || 1}&limit=${params?.limit || 20}`;
+        if (params?.search) url += `&search=${encodeURIComponent(params.search)}`;
+        if (params?.type) url += `&type=${params.type}`;
+        return this.http.get<PaginatedMovements>(url, { headers: this.getHeaders() });
     }
 
     createMovement(data: { productId: string; type: 'IN' | 'OUT'; quantity: number; notes?: string }): Observable<StockMovement> {
