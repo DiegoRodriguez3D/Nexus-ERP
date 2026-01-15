@@ -8,9 +8,10 @@ import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { SuppliersModule } from './suppliers/suppliers.module';
 
 @Module({
-  imports: [UsersModule, PrismaModule, AuthModule, CategoriesModule, ProductsModule, InventoryModule, DashboardModule],
+  imports: [UsersModule, PrismaModule, AuthModule, CategoriesModule, ProductsModule, InventoryModule, DashboardModule, SuppliersModule],
   controllers: [AppController],
   providers: [AppService],
 })
