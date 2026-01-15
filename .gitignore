@@ -1,26 +1,35 @@
-# Connectivity
+# OS Files
 .DS_Store
+Thumbs.db
 
 # Node
-node_modules
-npm-debug.log
-yarn-error.log
+node_modules/
+npm-debug.log*
+yarn-error.log*
+yarn.lock
 package-lock.json
 
-# Dist
-dist
-build
-
-# Misc
+# Environment Variables (CRITICAL - Never commit!)
 .env
-.env.production
-.env.development
+.env.*
+!.env.example
+
+# Build outputs
+dist/
+build/
+tmp/
+out-tsc/
 
 # IDE
-.idea
-.vscode
+.idea/
+.vscode/
 *.swp
 *.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # Angular
 .angular/
@@ -30,12 +39,58 @@ coverage/
 lib/
 testem.log
 typings/
+*.tgz
 
 # NestJS
-/backend/dist
-/backend/node_modules
+/backend/dist/
+/backend/node_modules/
 
 # Frontend
-/frontend/dist
-/frontend/node_modules
-/frontend/.angular
+/frontend/dist/
+/frontend/node_modules/
+/frontend/.angular/
+
+# Logs
+logs/
+*.log
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Testing
+coverage/
+.nyc_output/
+
+# Optional npm cache
+.npm/
+
+# Optional eslint cache
+.eslintcache
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Certificates/Keys (Security)
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Database
+*.sqlite
+*.db
+
+# Docker (local volumes)
+docker-data/
+postgres-data/
+
+# Prisma
+/backend/prisma/migrations/.migration_lock.toml

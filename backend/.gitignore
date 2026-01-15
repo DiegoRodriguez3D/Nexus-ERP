@@ -1,5 +1,17 @@
-node_modules
-# Keep environment variables out of version control
+# Environment Variables (CRITICAL - Never commit!)
 .env
+.env.*
+!.env.example
 
-/generated/prisma
+# Dist
+dist/
+
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# IDE
+.idea/
+.vscode/
