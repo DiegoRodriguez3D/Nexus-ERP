@@ -1,8 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterModule } from '@angular/router';
-import { MenuItem } from 'primeng/api';
 import { ThemeService } from '../services/theme.service';
+import { I18nService } from '../services/i18n.service';
+import { AuthService } from '../auth/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-layout',
@@ -22,23 +24,23 @@ import { ThemeService } from '../services/theme.service';
         <nav class="sidebar-nav">
           <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
             <i class="pi pi-th-large"></i>
-            <span>Dashboard</span>
+            <span>{{ i18n.t('nav.dashboard') }}</span>
           </a>
           <a routerLink="/inventory" routerLinkActive="active" class="nav-item">
             <i class="pi pi-box"></i>
-            <span>Inventory</span>
+            <span>{{ i18n.t('nav.inventory') }}</span>
           </a>
           <a routerLink="/movements" routerLinkActive="active" class="nav-item">
             <i class="pi pi-arrows-h"></i>
-            <span>Movements</span>
+            <span>{{ i18n.t('nav.movements') }}</span>
           </a>
           <a routerLink="/suppliers" routerLinkActive="active" class="nav-item">
             <i class="pi pi-truck"></i>
-            <span>Suppliers</span>
+            <span>{{ i18n.t('nav.suppliers') }}</span>
           </a>
           <a routerLink="/reports" routerLinkActive="active" class="nav-item">
             <i class="pi pi-chart-bar"></i>
-            <span>Reports</span>
+            <span>{{ i18n.t('nav.reports') }}</span>
           </a>
         </nav>
       </aside>
@@ -47,10 +49,12 @@ import { ThemeService } from '../services/theme.service';
       <main class="main-content">
         <!-- Topbar -->
         <header class="topbar">
-          <div class="topbar-left">
-            <!-- Breadcrumb or page title placeholder -->
-          </div>
+          <div class="topbar-left"></div>
           <div class="topbar-right">
+            <!-- Language Selector -->
+            <button class="lang-btn" (click)="i18n.toggleLanguage()">
+              {{ i18n.currentLang() === 'es' ? 'ES' : 'EN' }}
+            </button>
             <button class="icon-btn" (click)="toggleTheme()">
               <i [class]="themeService.currentTheme() === 'dark' ? 'pi pi-sun' : 'pi pi-moon'"></i>
             </button>
@@ -60,8 +64,19 @@ import { ThemeService } from '../services/theme.service';
             <button class="icon-btn">
               <i class="pi pi-bell"></i>
             </button>
-            <div class="user-avatar">
-              <img src="https://ui-avatars.com/api/?name=Admin&background=3b82f6&color=fff" alt="User" />
+            <div class="user-menu">
+              <div class="user-avatar" (click)="toggleUserMenu()">
+                <img [src]="getAvatarUrl()" alt="User" />
+              </div>
+              <div class="user-dropdown" *ngIf="showUserMenu">
+                <div class="user-info">
+                  <strong>{{ getUserEmail() }}</strong>
+                </div>
+                <button class="dropdown-item" (click)="logout()">
+                  <i class="pi pi-sign-out"></i>
+                  {{ i18n.t('common.logout') }}
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -80,7 +95,6 @@ import { ThemeService } from '../services/theme.service';
       overflow: hidden;
     }
 
-    /* Sidebar */
     .sidebar {
       width: 240px;
       background: var(--bg-sidebar);
@@ -140,7 +154,6 @@ import { ThemeService } from '../services/theme.service';
       width: 1.5rem;
     }
 
-    /* Main Content */
     .main-content {
       flex: 1;
       display: flex;
@@ -149,7 +162,6 @@ import { ThemeService } from '../services/theme.service';
       background: var(--bg-primary);
     }
 
-    /* Topbar */
     .topbar {
       height: 64px;
       background: var(--bg-secondary);
@@ -165,6 +177,24 @@ import { ThemeService } from '../services/theme.service';
       display: flex;
       align-items: center;
       gap: 0.5rem;
+    }
+
+    .lang-btn {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.75rem;
+      transition: all 0.2s;
+    }
+
+    .lang-btn:hover {
+      background: var(--accent-color);
+      color: white;
+      border-color: var(--accent-color);
     }
 
     .icon-btn {
@@ -186,12 +216,17 @@ import { ThemeService } from '../services/theme.service';
       color: var(--text-primary);
     }
 
+    .user-menu {
+      position: relative;
+      margin-left: 0.5rem;
+    }
+
     .user-avatar {
       width: 40px;
       height: 40px;
       border-radius: 50%;
       overflow: hidden;
-      margin-left: 0.5rem;
+      cursor: pointer;
     }
 
     .user-avatar img {
@@ -200,7 +235,44 @@ import { ThemeService } from '../services/theme.service';
       object-fit: cover;
     }
 
-    /* Page Content */
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 0.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      min-width: 200px;
+      z-index: 1000;
+    }
+
+    .user-info {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.875rem;
+      color: var(--text-primary);
+    }
+
+    .dropdown-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .dropdown-item:hover {
+      background: var(--bg-hover);
+    }
+
     .page-content {
       flex: 1;
       padding: 1.5rem;
@@ -210,8 +282,33 @@ import { ThemeService } from '../services/theme.service';
 })
 export class LayoutComponent {
   themeService = inject(ThemeService);
+  i18n = inject(I18nService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  showUserMenu = false;
 
   toggleTheme() {
     this.themeService.toggleTheme();
+  }
+
+  toggleUserMenu() {
+    this.showUserMenu = !this.showUserMenu;
+  }
+
+  getUserEmail(): string {
+    const user = this.authService.getUser();
+    return user?.email || 'Usuario';
+  }
+
+  getAvatarUrl(): string {
+    const user = this.authService.getUser();
+    const name = user?.email?.split('@')[0] || 'User';
+    return `https://ui-avatars.com/api/?name=${name}&background=3b82f6&color=fff`;
+  }
+
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 }
