@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
+import { ConfigService } from './config.service';
 
 export interface DashboardStats {
     totalStockValue: number;
@@ -36,14 +37,17 @@ export interface ChartData {
     providedIn: 'root'
 })
 export class DashboardService {
-    private apiUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-        ? 'https://nexus-erp-3kpp.onrender.com/dashboard'
-        : 'http://localhost:3000/dashboard';
+
 
     constructor(
         private http: HttpClient,
-        private authService: AuthService
+        private authService: AuthService,
+        private configService: ConfigService
     ) { }
+
+    private get apiUrl() {
+        return `${this.configService.apiUrl}/dashboard`;
+    }
 
     private getHeaders(): HttpHeaders {
         const token = this.authService.getToken();

@@ -1,4 +1,4 @@
 export const environment = {
     production: true,
-    apiUrl: 'https://api-nexuserp.diego-rodriguez.es'
+    apiUrl: '' // Loaded via ConfigService at runtime
 };

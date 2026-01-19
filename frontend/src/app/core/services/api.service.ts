@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
+import { ConfigService } from './config.service';
 
 export interface Supplier {
     id: string;
@@ -37,14 +38,17 @@ export interface PaginatedMovements {
     providedIn: 'root'
 })
 export class ApiService {
-    private apiUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-        ? 'https://nexus-erp-3kpp.onrender.com'
-        : 'http://localhost:3000';
+
 
     constructor(
         private http: HttpClient,
-        private authService: AuthService
+        private authService: AuthService,
+        private configService: ConfigService
     ) { }
+
+    private get apiUrl() {
+        return this.configService.apiUrl;
+    }
 
     private getHeaders(): HttpHeaders {
         const token = this.authService.getToken();

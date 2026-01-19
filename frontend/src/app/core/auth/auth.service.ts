@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { ConfigService } from '../services/config.service';
 
 export interface LoginResponse {
   access_token: string;
@@ -15,13 +16,18 @@ export interface LoginResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-    ? 'https://nexus-erp-3kpp.onrender.com'
-    : 'http://localhost:3000';
+
   private tokenKey = 'nexus_token';
   private userKey = 'nexus_user';
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private configService: ConfigService
+  ) { }
+
+  private get apiUrl() {
+    return this.configService.apiUrl;
+  }
 
   login(credentials: { email: string, password: string }): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, credentials)
