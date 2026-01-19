@@ -31,6 +31,9 @@ COPY prisma ./prisma/
 # Install production dependencies only
 RUN npm ci --only=production
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
