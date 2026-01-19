@@ -5,6 +5,7 @@ import { ThemeService } from '../services/theme.service';
 import { I18nService } from '../services/i18n.service';
 import { AuthService } from '../auth/auth.service';
 import { Router } from '@angular/router';
+import { ConfigService } from '../services/config.service';
 
 @Component({
   selector: 'app-layout',
@@ -43,6 +44,16 @@ import { Router } from '@angular/router';
             <span>{{ i18n.t('nav.reports') }}</span>
           </a>
         </nav>
+            <span>{{ i18n.t('nav.reports') }}</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <a [href]="configService.portfolioUrl" class="nav-item portfolio-link">
+            <i class="pi pi-arrow-left"></i>
+            <span>{{ i18n.currentLang() === 'es' ? 'Volver al Portfolio' : 'Back to Portfolio' }}</span>
+          </a>
+        </div>
       </aside>
 
       <!-- Main Content -->
@@ -115,6 +126,10 @@ import { Router } from '@angular/router';
     .nav-item.active { background: var(--accent-color); color: white; }
     .nav-item i { font-size: 1.125rem; width: 1.5rem; color: var(--text-sidebar-muted); }
     .nav-item.active i { color: white; }
+    .sidebar-footer { padding: 1rem; margin-top: auto; border-top: 1px solid var(--sidebar-border); }
+    .portfolio-link { color: var(--text-sidebar-muted); font-size: 0.875rem; }
+    .portfolio-link:hover { background: rgba(59, 130, 246, 0.1); color: var(--accent-color); }
+    .portfolio-link i { font-size: 1rem; }
     .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-primary); }
     .topbar { height: 64px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; flex-shrink: 0; }
     .topbar-right { display: flex; align-items: center; gap: 0.5rem; }
@@ -146,6 +161,7 @@ import { Router } from '@angular/router';
 export class LayoutComponent {
   themeService = inject(ThemeService);
   i18n = inject(I18nService);
+  configService = inject(ConfigService);
   private authService = inject(AuthService);
   private router = inject(Router);
 

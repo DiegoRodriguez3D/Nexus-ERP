@@ -4,6 +4,7 @@ import { lastValueFrom } from 'rxjs';
 
 export interface AppConfig {
     apiUrl: string;
+    portfolioUrl?: string;
 }
 
 @Injectable({
@@ -21,12 +22,18 @@ export class ConfigService {
             console.error('Could not load configuration', error);
             // Fallback for local development if file is missing
             this.config = {
-                apiUrl: 'http://localhost:3000'
-            };
+                this.config = {
+                    apiUrl: 'http://localhost:3000',
+                    portfolioUrl: 'https://diego-rodriguez.es'
+                };
+            }
         }
-    }
 
     get apiUrl(): string {
-        return this.config?.apiUrl || 'http://localhost:3000';
+            return this.config?.apiUrl || 'http://localhost:3000';
+        }
+
+    get portfolioUrl(): string {
+            return this.config?.portfolioUrl || 'https://diego-rodriguez.es';
+        }
     }
-}
