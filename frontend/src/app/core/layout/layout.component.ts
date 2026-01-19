@@ -44,9 +44,6 @@ import { ConfigService } from '../services/config.service';
             <span>{{ i18n.t('nav.reports') }}</span>
           </a>
         </nav>
-            <span>{{ i18n.t('nav.reports') }}</span>
-          </a>
-        </nav>
 
         <div class="sidebar-footer">
           <a [href]="configService.portfolioUrl" class="nav-item portfolio-link">
